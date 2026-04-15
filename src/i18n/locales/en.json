@@ -123,6 +123,8 @@
       "untitled": "Untitled Resume",
       "importSuccess": "Configuration imported successfully",
       "importError": "Import failed, please check the file format",
+      "dropToImport": "Drop to import resume",
+      "dropHint": "Supports JSON and PDF files",
       "importDialog": {
         "title": "Import Resume",
         "jsonTitle": "Import JSON",

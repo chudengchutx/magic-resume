@@ -124,6 +124,8 @@
       "untitled": "未命名简历",
       "importSuccess": "配置导入成功",
       "importError": "配置导入失败，请检查文件格式",
+      "dropToImport": "松开以导入简历",
+      "dropHint": "支持 JSON 和 PDF 文件",
       "importDialog": {
         "title": "导入简历",
         "jsonTitle": "导入 JSON",

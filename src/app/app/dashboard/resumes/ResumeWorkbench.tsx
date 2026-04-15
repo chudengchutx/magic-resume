@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations, useLocale } from "@/i18n/compat/client";
 import { useRouter } from "@/lib/navigation";
-import { Plus, Settings, AlertCircle } from "lucide-react";
+import { Plus, Settings, AlertCircle, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,7 @@ import {
     createResumeFromAIResult,
     toStringArray
 } from "./utils";
+import { useDragDropImport } from "@/hooks/useDragDropImport";
 import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
 const MAX_PDF_IMPORT_PAGES = 3;
@@ -56,6 +57,40 @@ export const ResumeWorkbench = () => {
     const [isImporting, setIsImporting] = useState(false);
     const jsonFileInputRef = useRef<HTMLInputElement>(null);
     const pdfFileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleJsonDrop = useCallback(async (file: File) => {
+        try {
+            setIsImporting(true);
+            await importResumeFromJson(file);
+        } catch (error) {
+            console.error("Drag-drop JSON import error:", error);
+            toast.error(t("dashboard.resumes.importError"));
+        } finally {
+            setIsImporting(false);
+        }
+    }, []);
+
+    const handlePdfDrop = useCallback(async (file: File) => {
+        try {
+            setIsImporting(true);
+            await importResumeFromPdf(file);
+        } catch (error) {
+            console.error("Drag-drop PDF import error:", error);
+            const message =
+                error instanceof Error && error.message
+                    ? error.message
+                    : t("dashboard.resumes.importDialog.pdfError");
+            toast.error(message);
+        } finally {
+            setIsImporting(false);
+        }
+    }, []);
+
+    const { isDragging } = useDragDropImport({
+        onJsonDrop: handleJsonDrop,
+        onPdfDrop: handlePdfDrop,
+        disabled: isImporting,
+    });
 
     useEffect(() => {
         const syncResumesFromFiles = async () => {
@@ -463,6 +498,38 @@ export const ResumeWorkbench = () => {
                     onPdfFileChange={handlePdfFileChange}
                 />
             </motion.div>
+
+            <AnimatePresence>
+                {isDragging && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                            className={cn(
+                                "flex flex-col items-center gap-4 p-12 rounded-2xl",
+                                "border-2 border-dashed border-primary/50",
+                                "bg-primary/5 dark:bg-primary/10"
+                            )}
+                        >
+                            <FileDown className="h-16 w-16 text-primary animate-bounce" />
+                            <p className="text-xl font-semibold text-primary">
+                                {t("dashboard.resumes.dropToImport")}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                {t("dashboard.resumes.dropHint")}
+                            </p>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </ScrollArea>
     );
 };
