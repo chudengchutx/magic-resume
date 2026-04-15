@@ -134,6 +134,23 @@ pnpm install && pnpm tauri build --bundles app
 - 分支：`claude/rubik-resume-mac-client-sW0Vq`
 - 仓库：`chudengchutx/magic-resume`
 
+### 用户本地 remote 配置（重要！）
+
+| remote 名 | 指向 | 说明 |
+|-----------|------|------|
+| `origin` | `JOYCEQL/magic-resume` | 上游原仓库 |
+| `fork` | `chudengchutx/magic-resume` | 用户的 fork |
+
+**告诉用户 git 命令时必须用 `fork`，不能用 `origin`。**
+
+```bash
+# 正确
+git pull fork claude/rubik-resume-mac-client-sW0Vq
+
+# 错误（这是上游，没有这个分支）
+git pull origin claude/rubik-resume-mac-client-sW0Vq
+```
+
 ## 用户
 
 - **初灯**（陆稼民），ToB 产品经理，正在找工作
@@ -148,3 +165,11 @@ pnpm install && pnpm tauri build --bundles app
 - 做完功能说清楚怎么获取和验证
 - 该质疑就质疑，不无脑执行
 - JSON 文件用 Python json.dump 改，不用 Edit 工具
+- Tauri 原生功能的调试不适合云端做，需要实机运行验证的交给本地
+- 涉及平台原生 API 的方案先查文档确认可行性，不靠猜
+- 多个相关修复合并为一次 push，不要改一个推一个
+- 用户报告问题时先确认 commit hash，不说"代码没问题"
+
+## 复盘文档
+
+- [`docs/postmortem-tauri-desktop-v1.md`](docs/postmortem-tauri-desktop-v1.md) — 2026-04-15 桌面端 bug 修复阶段的完整复盘
