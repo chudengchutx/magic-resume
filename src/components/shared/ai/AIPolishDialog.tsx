@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAIConfigStore } from "@/store/useAIConfigStore";
-import { AI_MODEL_CONFIGS } from "@/config/ai";
+import { AIModelType } from "@/config/ai";
 import { cn } from "@/lib/utils";
 import { isTauri, directPolish } from "@/utils/aiDirectClient";
 
@@ -53,19 +53,7 @@ export default function AIPolishDialog({
   const [isPolishing, setIsPolishing] = useState(false);
   const [polishedContent, setPolishedContent] = useState("");
   const [customInstructions, setCustomInstructions] = useState("");
-  const {
-    selectedModel,
-    doubaoApiKey,
-    doubaoModelId,
-    deepseekApiKey,
-    deepseekModelId,
-    openaiApiKey,
-    openaiModelId,
-    openaiApiEndpoint,
-    geminiApiKey,
-    geminiModelId,
-    isConfigured
-  } = useAIConfigStore();
+  const { isConfigured, getActiveConfig } = useAIConfigStore();
   const abortControllerRef = useRef<AbortController | null>(null);
   const polishedContentRef = useRef<HTMLDivElement>(null);
 
@@ -77,32 +65,17 @@ export default function AIPolishDialog({
         return;
       }
 
+      const activeConfig = getActiveConfig();
+      if (!activeConfig) return;
+      const { modelType, apiKey, modelId, apiEndpoint, config } = activeConfig;
+      const requestModel = config.requiresModelId ? modelId : config.defaultModel;
+
       setIsPolishing(true);
       setPolishedContent("");
 
       abortControllerRef.current = new AbortController();
 
-      const config = AI_MODEL_CONFIGS[selectedModel];
-      const apiKey =
-        selectedModel === "doubao"
-          ? doubaoApiKey
-          : selectedModel === "openai"
-            ? openaiApiKey
-            : selectedModel === "gemini"
-              ? geminiApiKey
-              : deepseekApiKey;
-      const modelId =
-        selectedModel === "doubao"
-          ? doubaoModelId
-          : selectedModel === "openai"
-            ? openaiModelId
-            : selectedModel === "gemini"
-              ? geminiModelId
-              : deepseekModelId;
-
       const markdownContent = turndownService.turndown(content);
-      const requestModel = config.requiresModelId ? modelId : config.defaultModel;
-      const requestEndpoint = selectedModel === "openai" ? openaiApiEndpoint : undefined;
 
       let response: Response;
 
@@ -110,10 +83,10 @@ export default function AIPolishDialog({
         response = await directPolish(
           {
             content: markdownContent,
-            apiKey: apiKey!,
+            apiKey,
             model: requestModel!,
-            modelType: selectedModel,
-            apiEndpoint: requestEndpoint,
+            modelType: modelType as AIModelType,
+            apiEndpoint,
             customInstructions: customInstructions.trim() || undefined,
           },
           abortControllerRef.current.signal
@@ -125,9 +98,9 @@ export default function AIPolishDialog({
           body: JSON.stringify({
             content: markdownContent,
             apiKey,
-            apiEndpoint: requestEndpoint,
+            apiEndpoint,
             model: requestModel,
-            modelType: selectedModel,
+            modelType,
             customInstructions: customInstructions.trim() || undefined,
           }),
           signal: abortControllerRef.current.signal,

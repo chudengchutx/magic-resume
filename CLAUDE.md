@@ -113,22 +113,25 @@ src/
 - macOS 透明标题栏
 - 文件：`lib.rs`
 
+### 7. 自定义 AI 中转服务 ✅
+- 支持添加多个自定义 OpenAI 兼容的中转服务（one-api、new-api、七牛云等）
+- 用户可配置：名称、API 地址、API Key、多模型标签（添加/删除/切换）
+- `CustomProvider` 接口：`{ id, name, apiEndpoint, apiKey, models[], selectedModel }`
+- `getActiveConfig()` 统一解析内置/自定义服务商，所有 AI 调用点无需修改
+- 自定义服务商以 `modelType: "openai"` 走 OpenAI 兼容协议
+- 文件：`ai.ts`, `useAIConfigStore.ts`, `ai/page.tsx`, `useGrammarStore.ts`, `AIPolishDialog.tsx`, `AIOptimizeSuggestionDialog.tsx`
+
 ## 待做功能 ❌
 
-### 7. 拖拽导入
+### 8. 拖拽导入
 - 把 JSON/PDF 文件拖到窗口直接导入简历
 - 需要：Tauri drag-and-drop 事件监听、JSON 解析导入、PDF 解析导入（可能需要 pdfjs）
 - 涉及文件：可能需新建 hook + 修改 dashboard 页面
 
-### 8. 自动更新
+### 9. 自动更新
 - 用 Tauri updater 插件实现应用自动更新
 - 需要：`tauri-plugin-updater`、更新服务器配置、版本检查 UI
 - 涉及文件：`Cargo.toml`, `tauri.conf.json`, 新建更新检查组件
-
-### 9. 本地 AI 模型（Ollama）
-- 集成 Ollama 等本地模型，实现离线 AI 润色
-- 需要：Ollama API 客户端、AI 设置页新增 Ollama 选项、模型检测
-- 涉及文件：`ai.ts`, `useAIConfigStore.ts`, `aiDirectClient.ts`, AI 设置页
 
 ### 10. 多窗口编辑
 - 同时打开多份简历在不同窗口

@@ -103,7 +103,7 @@ export const AIOptimizeSuggestionDialog = ({
   resumeData,
 }: AIOptimizeSuggestionDialogProps) => {
   const t = useTranslations();
-  const { selectedModel, ...config } = useAIConfigStore();
+  const { getActiveConfig, isConfigured } = useAIConfigStore();
 
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<OptimizeResult | null>(null);
@@ -163,46 +163,25 @@ export const AIOptimizeSuggestionDialog = ({
     setShowHistory(false);
 
     try {
-      const apiKey =
-        selectedModel === "doubao"
-          ? config.doubaoApiKey
-          : selectedModel === "openai"
-            ? config.openaiApiKey
-            : selectedModel === "gemini"
-              ? config.geminiApiKey
-              : selectedModel === "zhipu"
-                ? config.zhipuApiKey
-                : config.deepseekApiKey;
-
-      const modelId =
-        selectedModel === "doubao"
-          ? config.doubaoModelId
-          : selectedModel === "openai"
-            ? config.openaiModelId
-            : selectedModel === "gemini"
-              ? config.geminiModelId
-              : selectedModel === "zhipu"
-                ? config.zhipuModelId
-                : undefined;
-
-      if (!apiKey) {
+      const activeConfig = getActiveConfig();
+      if (!activeConfig?.apiKey) {
         setError(t("optimizeSuggestion.error.noApiKey"));
         setIsLoading(false);
         return;
       }
+      const { modelType, apiKey, modelId, apiEndpoint } = activeConfig;
 
       const requestLocale = typeof window !== "undefined" ? document.documentElement.lang : "zh";
-      const requestEndpoint = selectedModel === "openai" ? config.openaiApiEndpoint : undefined;
 
       let data: { success: boolean; data?: OptimizeResult; error?: string };
 
       if (isTauri) {
         data = await directOptimizeSuggest({
           resumeData,
-          modelType: selectedModel,
+          modelType: modelType as any,
           apiKey,
           modelId,
-          apiEndpoint: requestEndpoint,
+          apiEndpoint,
           locale: requestLocale,
         }) as { success: boolean; data?: OptimizeResult; error?: string };
       } else {
@@ -211,10 +190,10 @@ export const AIOptimizeSuggestionDialog = ({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             resumeData,
-            modelType: selectedModel,
+            modelType,
             apiKey,
             modelId,
-            apiEndpoint: requestEndpoint,
+            apiEndpoint,
             locale: requestLocale,
           }),
         });

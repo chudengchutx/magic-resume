@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import Mark from "mark.js";
 import { useAIConfigStore } from "@/store/useAIConfigStore";
-import { AI_MODEL_CONFIGS } from "@/config/ai";
+import { AI_MODEL_CONFIGS, AIModelType } from "@/config/ai";
 import { cn } from "@/lib/utils";
 import { isTauri, directGrammarCheck } from "@/utils/aiDirectClient";
 
@@ -91,52 +91,26 @@ export const useGrammarStore = create<GrammarStore>((set, get) => ({
     set((state) => ({ highlightKey: state.highlightKey + 1 })),
 
   checkGrammar: async (text: string) => {
-    const {
-      selectedModel,
-      doubaoApiKey,
-      doubaoModelId,
-      deepseekApiKey,
-      deepseekModelId,
-      openaiApiKey,
-      openaiModelId,
-      openaiApiEndpoint,
-      geminiApiKey,
-      geminiModelId
-    } = useAIConfigStore.getState();
-
-    const config = AI_MODEL_CONFIGS[selectedModel];
-    const apiKey =
-      selectedModel === "doubao"
-        ? doubaoApiKey
-        : selectedModel === "openai"
-          ? openaiApiKey
-          : selectedModel === "gemini"
-            ? geminiApiKey
-            : deepseekApiKey;
-    const modelId =
-      selectedModel === "doubao"
-        ? doubaoModelId
-        : selectedModel === "openai"
-          ? openaiModelId
-          : selectedModel === "gemini"
-            ? geminiModelId
-            : deepseekModelId;
+    const activeConfig = useAIConfigStore.getState().getActiveConfig();
+    if (!activeConfig) {
+      toast.error("请先配置 AI 服务");
+      return;
+    }
+    const { modelType, apiKey, modelId, apiEndpoint, config } = activeConfig;
+    const requestModel = config.requiresModelId ? modelId : config.defaultModel;
 
     set({ isChecking: true });
 
     try {
-      const requestModel = config.requiresModelId ? modelId : config.defaultModel;
-      const requestEndpoint = selectedModel === "openai" ? openaiApiEndpoint : undefined;
-
       let data: Record<string, unknown>;
 
       if (isTauri) {
         data = await directGrammarCheck({
           content: text,
-          apiKey: apiKey!,
+          apiKey,
           model: requestModel!,
-          modelType: selectedModel,
-          apiEndpoint: requestEndpoint,
+          modelType: modelType as AIModelType,
+          apiEndpoint,
         });
       } else {
         const response = await fetch("/api/grammar", {
@@ -146,8 +120,8 @@ export const useGrammarStore = create<GrammarStore>((set, get) => ({
             content: text,
             apiKey,
             model: requestModel,
-            modelType: selectedModel,
-            apiEndpoint: requestEndpoint,
+            modelType,
+            apiEndpoint,
           }),
         });
 

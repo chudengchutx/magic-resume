@@ -1,5 +1,33 @@
 export type AIModelType = "doubao" | "deepseek" | "openai" | "gemini" | "zhipu";
 
+/** Custom OpenAI-compatible provider (relay services like one-api, new-api, 七牛云) */
+export interface CustomProvider {
+  id: string;              // unique ID, e.g. "custom_1713456789"
+  name: string;            // user-defined name, e.g. "七牛云 (Qiniu)"
+  apiEndpoint: string;     // e.g. "https://api.qnaigc.com/v1"
+  apiKey: string;
+  models: string[];        // available model IDs, e.g. ["deepseek-v3", "gpt-4o", "claude-sonnet"]
+  selectedModel: string;   // currently active model from the list
+}
+
+/** Returns true if the selectedModel ID refers to a custom provider */
+export function isCustomProvider(modelId: string): boolean {
+  return modelId.startsWith("custom_");
+}
+
+/** Build an AIModelConfig for a custom provider (OpenAI-compatible) */
+export function getCustomProviderConfig(provider: CustomProvider): AIModelConfig {
+  return {
+    url: () => `${provider.apiEndpoint}/chat/completions`,
+    requiresModelId: true,
+    headers: (apiKey: string) => ({
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    }),
+    validate: () => !!(provider.apiKey && provider.selectedModel && provider.apiEndpoint),
+  };
+}
+
 export interface AIValidationContext {
   doubaoApiKey?: string;
   doubaoModelId?: string;
