@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAIConfigStore } from "@/store/useAIConfigStore";
 import { AI_MODEL_CONFIGS } from "@/config/ai";
 import { cn } from "@/lib/utils";
+import { isTauri, directPolish } from "@/utils/aiDirectClient";
 
 interface AIPolishDialogProps {
   open: boolean;
@@ -99,31 +100,49 @@ export default function AIPolishDialog({
               ? geminiModelId
               : deepseekModelId;
 
-      const response = await fetch("/api/polish", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          content: turndownService.turndown(content),
-          apiKey,
-          apiEndpoint: selectedModel === "openai" ? openaiApiEndpoint : undefined,
-          model: config.requiresModelId ? modelId : config.defaultModel,
-          modelType: selectedModel,
-          customInstructions: customInstructions.trim() || undefined
-        }),
-        signal: abortControllerRef.current.signal
-      });
+      const markdownContent = turndownService.turndown(content);
+      const requestModel = config.requiresModelId ? modelId : config.defaultModel;
+      const requestEndpoint = selectedModel === "openai" ? openaiApiEndpoint : undefined;
 
-      if (!response.ok) {
-        let errorDetail = `HTTP ${response.status}`;
-        try {
-          const errorJson = await response.json();
-          errorDetail = errorJson.detail || errorJson.error || errorDetail;
-        } catch {
-          // 无法解析 JSON
+      let response: Response;
+
+      if (isTauri) {
+        response = await directPolish(
+          {
+            content: markdownContent,
+            apiKey: apiKey!,
+            model: requestModel!,
+            modelType: selectedModel,
+            apiEndpoint: requestEndpoint,
+            customInstructions: customInstructions.trim() || undefined,
+          },
+          abortControllerRef.current.signal
+        );
+      } else {
+        response = await fetch("/api/polish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: markdownContent,
+            apiKey,
+            apiEndpoint: requestEndpoint,
+            model: requestModel,
+            modelType: selectedModel,
+            customInstructions: customInstructions.trim() || undefined,
+          }),
+          signal: abortControllerRef.current.signal,
+        });
+
+        if (!response.ok) {
+          let errorDetail = `HTTP ${response.status}`;
+          try {
+            const errorJson = await response.json();
+            errorDetail = errorJson.detail || errorJson.error || errorDetail;
+          } catch {
+            // 无法解析 JSON
+          }
+          throw new Error(errorDetail);
         }
-        throw new Error(errorDetail);
       }
 
       if (!response.body) {

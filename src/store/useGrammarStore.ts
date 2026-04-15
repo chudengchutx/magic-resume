@@ -4,6 +4,7 @@ import Mark from "mark.js";
 import { useAIConfigStore } from "@/store/useAIConfigStore";
 import { AI_MODEL_CONFIGS } from "@/config/ai";
 import { cn } from "@/lib/utils";
+import { isTauri, directGrammarCheck } from "@/utils/aiDirectClient";
 
 export interface GrammarError {
   context: string;
@@ -124,37 +125,51 @@ export const useGrammarStore = create<GrammarStore>((set, get) => ({
     set({ isChecking: true });
 
     try {
-      const response = await fetch("/api/grammar", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const requestModel = config.requiresModelId ? modelId : config.defaultModel;
+      const requestEndpoint = selectedModel === "openai" ? openaiApiEndpoint : undefined;
+
+      let data: Record<string, unknown>;
+
+      if (isTauri) {
+        data = await directGrammarCheck({
           content: text,
-          apiKey,
-          model: config.requiresModelId ? modelId : config.defaultModel,
+          apiKey: apiKey!,
+          model: requestModel!,
           modelType: selectedModel,
-          apiEndpoint: selectedModel === "openai" ? openaiApiEndpoint : undefined,
-        }),
-      });
+          apiEndpoint: requestEndpoint,
+        });
+      } else {
+        const response = await fetch("/api/grammar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: text,
+            apiKey,
+            model: requestModel,
+            modelType: selectedModel,
+            apiEndpoint: requestEndpoint,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status}`);
+        }
+
+        data = await response.json();
       }
 
-      const data = await response.json();
-
-      if (data.error) {
-        toast.error(data.error.message);
-        throw new Error(data.error.message);
+      if ((data as any).error) {
+        const errMsg = (data as any).error.message || (data as any).error;
+        toast.error(errMsg);
+        throw new Error(errMsg);
       }
 
-      if (data.error?.code === "AuthenticationError") {
+      if ((data as any).error?.code === "AuthenticationError") {
         toast.error("ApiKey 或 模型Id 不正确");
-        throw new Error(data.error.message);
+        throw new Error((data as any).error.message);
       }
 
-      const aiResponse = data.choices[0]?.message?.content;
+      const aiResponse = (data as any).choices[0]?.message?.content;
 
       try {
         const grammarErrors = JSON.parse(aiResponse);

@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/i18n/compat/client";
 import { useAIConfigStore } from "@/store/useAIConfigStore";
+import { isTauri, directOptimizeSuggest } from "@/utils/aiDirectClient";
 
 interface Suggestion {
   category: string;
@@ -190,22 +191,35 @@ export const AIOptimizeSuggestionDialog = ({
         return;
       }
 
-      const response = await fetch("/api/resume/optimize-suggest", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const requestLocale = typeof window !== "undefined" ? document.documentElement.lang : "zh";
+      const requestEndpoint = selectedModel === "openai" ? config.openaiApiEndpoint : undefined;
+
+      let data: { success: boolean; data?: OptimizeResult; error?: string };
+
+      if (isTauri) {
+        data = await directOptimizeSuggest({
           resumeData,
           modelType: selectedModel,
           apiKey,
           modelId,
-          apiEndpoint: selectedModel === "openai" ? config.openaiApiEndpoint : undefined,
-          locale: typeof window !== "undefined" ? document.documentElement.lang : "zh",
-        }),
-      });
-
-      const data = await response.json();
+          apiEndpoint: requestEndpoint,
+          locale: requestLocale,
+        }) as { success: boolean; data?: OptimizeResult; error?: string };
+      } else {
+        const response = await fetch("/api/resume/optimize-suggest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            resumeData,
+            modelType: selectedModel,
+            apiKey,
+            modelId,
+            apiEndpoint: requestEndpoint,
+            locale: requestLocale,
+          }),
+        });
+        data = await response.json();
+      }
 
       if (!data.success) {
         setError(data.error || t("optimizeSuggestion.error.unknown"));
@@ -213,8 +227,8 @@ export const AIOptimizeSuggestionDialog = ({
         return;
       }
 
-      setResult(data.data);
-      saveToHistory(data.data);
+      setResult(data.data!);
+      saveToHistory(data.data!);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("optimizeSuggestion.error.unknown")

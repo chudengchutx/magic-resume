@@ -12,6 +12,7 @@ import { useAIConfigStore } from "@/store/useAIConfigStore";
 import { cn } from "@/lib/utils";
 import IconOpenAi from "@/components/ai/icon/IconOpenAi";
 import { toast } from "sonner";
+import { isTauri, directTestConnection } from "@/utils/aiDirectClient";
 
 type ConnectionStatus = "idle" | "testing" | "success" | "error";
 
@@ -138,15 +139,23 @@ const AISettingsContent = () => {
     }
 
     try {
-      const response = await fetch("/api/ai/test-connection", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
+      let data: { success: boolean; error?: string };
 
-      const data = await response.json();
+      if (isTauri) {
+        data = await directTestConnection({
+          modelType,
+          apiKey: requestBody.apiKey as string,
+          modelId: requestBody.modelId as string | undefined,
+          apiEndpoint: requestBody.apiEndpoint as string | undefined,
+        });
+      } else {
+        const response = await fetch("/api/ai/test-connection", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody),
+        });
+        data = await response.json();
+      }
 
       if (data.success) {
         setConnectionStatus((prev) => ({ ...prev, [modelType]: "success" }));
