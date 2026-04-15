@@ -37,7 +37,7 @@ export default defineConfig({
     outDir: "dist-tauri",
     emptyOutDir: true,
     // Tauri uses Chromium on Windows and WebKit on macOS/Linux
-    target: process.env.TAURI_ENV_PLATFORM === "windows" ? "chrome105" : "safari14",
+    target: "esnext",
     // Don't minify for debug builds
     minify: !process.env.TAURI_ENV_DEBUG ? "esbuild" : false,
     // Produce sourcemaps for debug builds
