@@ -159,4 +159,16 @@ pnpm tauri:build          # 构建 .app / .dmg
 ## Git 分支
 
 - 开发分支：`claude/rubik-resume-mac-client-sW0Vq`
-- 独立仓库：`chudengchutx/magic`（main 分支）
+- 仓库：`chudengchutx/magic-resume`
+
+## 用户本地构建流程
+
+**重要：云端环境是 Linux，无法打 macOS 安装包。每次代码推送完成后，必须立刻提醒用户按以下步骤操作：**
+
+1. 打开 https://github.com/chudengchutx/magic-resume
+2. 切换到分支 `claude/rubik-resume-mac-client-sW0Vq`
+3. 点绿色 `Code` → `Download ZIP`
+4. 解压后进入目录，终端执行 `pnpm install` → `pnpm tauri:build`
+5. 安装包在 `src-tauri/target/release/bundle/dmg/` 目录下
+
+**不要让用户折腾 git clone / git remote / git fetch 等命令，直接下载 ZIP 最简单。**
