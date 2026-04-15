@@ -159,30 +159,6 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .invoke_handler(tauri::generate_handler![quit_app])
         .setup(|app| {
-            // macOS: set native window styling
-            #[cfg(target_os = "macos")]
-            {
-                if let Some(win) = app.get_webview_window("main") {
-                    use objc::{class, msg_send, sel, sel_impl};
-                    if let Ok(ptr) = win.ns_window() {
-                        let ns_win = ptr as *mut objc::runtime::Object;
-                        unsafe {
-                            // Enable full-size content view for immersive title bar
-                            let mask: u64 = msg_send![ns_win, styleMask];
-                            let full_size_content_view: u64 = 1 << 15; // NSWindowStyleMaskFullSizeContentView
-                            let _: () =
-                                msg_send![ns_win, setStyleMask: mask | full_size_content_view];
-
-                            // Make title bar transparent
-                            let _: () = msg_send![ns_win, setTitlebarAppearsTransparent: true];
-
-                            // Hide title text
-                            let _: () = msg_send![ns_win, setTitleVisibility: 1_i64]; // NSWindowTitleHidden
-                        }
-                    }
-                }
-            }
-
             setup_menu(app.handle())?;
             setup_tray(app.handle());
 

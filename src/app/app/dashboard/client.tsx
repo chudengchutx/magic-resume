@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/tooltip";
 import Logo from "@/components/shared/Logo";
 import { useLocale, useTranslations } from "@/i18n/compat/client";
-import { isTauri } from "@/utils/tauriFileSystem";
 
 interface MenuItem {
   title: string;
@@ -88,7 +87,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           collapsible={collapsible}
           className="border-r border-border/40 bg-card/50 backdrop-blur-xl"
         >
-          <SidebarHeader className={`h-16 flex items-center justify-center border-b border-border/40 ${isTauri ? "pt-5" : ""}`}>
+          <SidebarHeader className="h-16 flex items-center justify-center border-b border-border/40">
             <div className="w-full cursor-pointer justify-center flex items-center" onClick={() => router.push(`/${locale}`)}
             >
               <Logo
@@ -170,7 +169,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <SidebarFooter />
         </Sidebar>
         <main className="flex-1 flex flex-col">
-          <div className={`flex items-center ${isTauri ? "p-2 pl-4 h-10" : "p-2"}`} data-tauri-drag-region>
+          <div className="p-2">
             <SidebarTrigger />
           </div>
           <div className="flex-1">{children}</div>
