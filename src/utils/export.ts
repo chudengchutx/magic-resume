@@ -1,6 +1,8 @@
 import { toast } from "sonner";
 import { PDF_EXPORT_CONFIG } from "@/config";
 import { normalizeFontFamily } from "@/utils/fonts";
+import { isTauri } from "@/utils/tauriFileSystem";
+import { exportResumeToBrowserPrint } from "@/utils/print";
 
 export const getOptimizedStyles = () => {
   const styleCache = new Map();
@@ -89,6 +91,22 @@ export const exportToPdf = async ({
   successMessage,
   errorMessage
 }: ExportToPdfOptions) => {
+  // Tauri desktop: use native print dialog (macOS "Save as PDF" built-in)
+  if (isTauri) {
+    const resumeContent = document.getElementById(elementId);
+    if (!resumeContent) {
+      if (errorMessage) toast.error(errorMessage);
+      return;
+    }
+    onStart?.();
+    try {
+      await exportResumeToBrowserPrint(resumeContent, pagePadding, fontFamily);
+    } finally {
+      onEnd?.();
+    }
+    return;
+  }
+
   const exportStartTime = performance.now();
   onStart?.();
 

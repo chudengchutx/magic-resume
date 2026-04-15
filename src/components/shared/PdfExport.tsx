@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useTranslations } from "@/i18n/compat/client";
 import {
   Download,
@@ -79,6 +79,15 @@ const PdfExport = () => {
       globalSettings?.fontFamily
     );
   };
+
+  // Listen for Tauri menu-triggered export
+  useEffect(() => {
+    const handleMenuExport = () => {
+      if (!isExporting) handleExport();
+    };
+    window.addEventListener("tauri:export-pdf", handleMenuExport);
+    return () => window.removeEventListener("tauri:export-pdf", handleMenuExport);
+  });
 
   const isLoading = isExporting || isExportingJson;
   const loadingText = isExporting
