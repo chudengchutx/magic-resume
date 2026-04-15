@@ -14,6 +14,7 @@ import enMessages from "@/i18n/locales/en.json";
 import { Providers } from "@/app/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { getPreferredLocale } from "@/i18n/runtime";
+import { useTauriMenuHandler } from "@/hooks/useTauriMenuHandler";
 
 const isTauriApp =
   typeof window !== "undefined" &&
@@ -50,6 +51,9 @@ function AppShell() {
   });
   const locale = getPreferredLocale(pathname);
   const messages = locale === "en" ? enMessages : zhMessages;
+
+  // Handle native macOS menu bar actions (no-op in web mode)
+  useTauriMenuHandler();
 
   useEffect(() => {
     document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000`;

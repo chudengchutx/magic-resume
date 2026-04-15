@@ -1,7 +1,7 @@
 use tauri::{
-    menu::{Menu, MenuItem},
+    menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager, RunEvent,
+    Emitter, Manager, RunEvent,
 };
 
 #[tauri::command]
@@ -49,6 +49,106 @@ fn setup_tray(app: &tauri::AppHandle) {
         .unwrap();
 }
 
+fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
+    // ─── File Menu ──────────────────────────────────────
+    let new_resume = MenuItem::with_id(app, "new_resume", "新建简历", true, Some("CmdOrCtrl+N"))?;
+    let save = MenuItem::with_id(app, "save", "保存", true, Some("CmdOrCtrl+S"))?;
+    let export_pdf = MenuItem::with_id(app, "export_pdf", "导出 PDF", true, Some("CmdOrCtrl+P"))?;
+    let close_window = PredefinedMenuItem::close_window(app, Some("关闭窗口"))?;
+
+    let file_menu = Submenu::with_items(
+        app,
+        "文件",
+        true,
+        &[
+            &new_resume,
+            &PredefinedMenuItem::separator(app)?,
+            &save,
+            &export_pdf,
+            &PredefinedMenuItem::separator(app)?,
+            &close_window,
+        ],
+    )?;
+
+    // ─── Edit Menu ──────────────────────────────────────
+    let undo = PredefinedMenuItem::undo(app, Some("撤销"))?;
+    let redo = PredefinedMenuItem::redo(app, Some("重做"))?;
+    let cut = PredefinedMenuItem::cut(app, Some("剪切"))?;
+    let copy = PredefinedMenuItem::copy(app, Some("复制"))?;
+    let paste = PredefinedMenuItem::paste(app, Some("粘贴"))?;
+    let select_all = PredefinedMenuItem::select_all(app, Some("全选"))?;
+
+    let edit_menu = Submenu::with_items(
+        app,
+        "编辑",
+        true,
+        &[
+            &undo,
+            &redo,
+            &PredefinedMenuItem::separator(app)?,
+            &cut,
+            &copy,
+            &paste,
+            &PredefinedMenuItem::separator(app)?,
+            &select_all,
+        ],
+    )?;
+
+    // ─── View Menu ──────────────────────────────────────
+    let dashboard = MenuItem::with_id(app, "goto_dashboard", "我的简历", true, Some("CmdOrCtrl+1"))?;
+    let templates = MenuItem::with_id(app, "goto_templates", "简历模板", true, Some("CmdOrCtrl+2"))?;
+    let ai_settings = MenuItem::with_id(app, "goto_ai_settings", "AI 服务商", true, Some("CmdOrCtrl+3"))?;
+    let settings = MenuItem::with_id(app, "goto_settings", "通用设置", true, Some("CmdOrCtrl+,"))?;
+    let fullscreen = PredefinedMenuItem::fullscreen(app, Some("进入全屏"))?;
+
+    let view_menu = Submenu::with_items(
+        app,
+        "视图",
+        true,
+        &[
+            &dashboard,
+            &templates,
+            &ai_settings,
+            &settings,
+            &PredefinedMenuItem::separator(app)?,
+            &fullscreen,
+        ],
+    )?;
+
+    // ─── Window Menu ────────────────────────────────────
+    let minimize = PredefinedMenuItem::minimize(app, Some("最小化"))?;
+    let zoom = PredefinedMenuItem::maximize(app, Some("缩放"))?;
+
+    let window_menu = Submenu::with_items(
+        app,
+        "窗口",
+        true,
+        &[&minimize, &zoom],
+    )?;
+
+    // ─── Build and set the menu ─────────────────────────
+    let menu = Menu::with_items(
+        app,
+        &[&file_menu, &edit_menu, &view_menu, &window_menu],
+    )?;
+
+    app.set_menu(menu)?;
+
+    // ─── Handle custom menu events ──────────────────────
+    app.on_menu_event(move |app, event| {
+        let id = event.id.as_ref();
+        match id {
+            "new_resume" | "save" | "export_pdf" | "goto_dashboard" | "goto_templates"
+            | "goto_ai_settings" | "goto_settings" => {
+                let _ = app.emit("menu-action", id);
+            }
+            _ => {}
+        }
+    });
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -81,6 +181,7 @@ pub fn run() {
                 }
             }
 
+            setup_menu(app.handle())?;
             setup_tray(app.handle());
 
             Ok(())
