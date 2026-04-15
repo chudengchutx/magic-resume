@@ -173,6 +173,21 @@ pnpm tauri:build          # 构建 .app / .dmg
 
 **不要让用户折腾 git clone / git remote / git fetch 等命令，直接下载 ZIP 最简单。**
 
+**macOS 未签名 App 安装方法：**
+如果安装后被 Gatekeeper 拦截，终端执行：
+```bash
+xattr -cr /Applications/魔方简历.app
+```
+
+## 用户场景
+
+- **用户**：个人使用，正在找工作，简历时常修改
+- **设备**：MacBook（主力）+ Mac Mini，未来考虑 iOS/Android 查看
+- **数据同步**：简历 JSON 文件存 NAS，通过 NAS 同步工具（如 Synology Drive）多设备共享
+- **AI 中转**：NAS 上部署中转服务（one-api / new-api），客户端统一配 NAS 地址，后端走七牛云、雪顶等
+- **移动端需求**：手机端以查看为主，小修改为辅，不急于开发
+- **关联项目**：Peek（chudengchutx/peek）也是用户的项目，同样使用 Tauri + xattr -cr 方式安装
+
 ## 协作原则
 
 **项目开始前必须确认：**
