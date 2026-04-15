@@ -229,7 +229,8 @@
           "apiKey": "API Key",
           "modelId": "Model ID"
         }
-      }
+      },
+      "tauriStorage": "Desktop app saves resumes to local folder automatically, no configuration needed"
     },
     "templates": {
       "title": "Templates",

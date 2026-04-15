@@ -230,7 +230,8 @@
           "apiKey": "API Key",
           "modelId": "模型 ID"
         }
-      }
+      },
+      "tauriStorage": "桌面端简历自动保存到本地文件夹，无需手动配置"
     },
     "templates": {
       "title": "模板",
