@@ -121,12 +121,14 @@ src/
 - 自定义服务商以 `modelType: "openai"` 走 OpenAI 兼容协议
 - 文件：`ai.ts`, `useAIConfigStore.ts`, `ai/page.tsx`, `useGrammarStore.ts`, `AIPolishDialog.tsx`, `AIOptimizeSuggestionDialog.tsx`
 
-## 待做功能 ❌
+### 8. 拖拽导入 ✅
+- 拖拽 JSON/PDF 文件到窗口直接导入简历
+- HTML5 drag 事件监听，全屏半透明遮罩 + 弹跳图标动画
+- JSON 直接解析导入，PDF 走现有 Gemini AI 识别流程
+- `useDragDropImport` hook 处理 dragenter/dragleave/drop 计数
+- 文件：`useDragDropImport.ts`, `ResumeWorkbench.tsx`, `zh.json`, `en.json`
 
-### 8. 拖拽导入
-- 把 JSON/PDF 文件拖到窗口直接导入简历
-- 需要：Tauri drag-and-drop 事件监听、JSON 解析导入、PDF 解析导入（可能需要 pdfjs）
-- 涉及文件：可能需新建 hook + 修改 dashboard 页面
+## 待做功能 ❌
 
 ### 9. 自动更新
 - 用 Tauri updater 插件实现应用自动更新
