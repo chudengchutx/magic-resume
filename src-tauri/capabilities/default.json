@@ -21,6 +21,13 @@
     "fs:scope-appdata-recursive",
     "fs:scope-document-recursive",
     "shell:allow-open",
-    "opener:default"
+    "opener:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://*" },
+        { "url": "http://*" }
+      ]
+    }
   ]
 }

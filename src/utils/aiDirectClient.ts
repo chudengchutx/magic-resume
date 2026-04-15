@@ -1,11 +1,31 @@
 /**
  * Direct AI provider client for Tauri desktop app.
  * Calls AI APIs directly from the client, bypassing server API routes.
- * In Tauri's WebView, CORS is not enforced for external HTTPS requests.
+ * Uses Tauri's native HTTP plugin to bypass WebView fetch restrictions.
  */
 
 import { AIModelType, AI_MODEL_CONFIGS } from "@/config/ai";
 import { isTauri } from "@/utils/tauriFileSystem";
+
+/**
+ * Fetch wrapper that uses Tauri's native HTTP plugin when in desktop mode.
+ * Browser fetch in WKWebView can fail with "Load failed" for external URLs.
+ */
+async function tauriFetch(
+  url: string,
+  options: RequestInit
+): Promise<Response> {
+  if (isTauri) {
+    const { fetch: tFetch } = await import("@tauri-apps/plugin-http");
+    return tFetch(url, {
+      method: options.method || "GET",
+      headers: options.headers as Record<string, string>,
+      body: options.body as any,
+      signal: options.signal,
+    });
+  }
+  return fetch(url, options);
+}
 
 interface AIRequestParams {
   apiKey: string;
@@ -81,7 +101,7 @@ export async function directGrammarCheck(params: AIRequestParams & { content: st
       responseMimeType: "application/json",
     });
 
-    const response = await fetch(url, {
+    const response = await tauriFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -99,7 +119,7 @@ export async function directGrammarCheck(params: AIRequestParams & { content: st
 
   // OpenAI-compatible providers
   const modelConfig = AI_MODEL_CONFIGS[modelType];
-  const response = await fetch(modelConfig.url(apiEndpoint), {
+  const response = await tauriFetch(modelConfig.url(apiEndpoint), {
     method: "POST",
     headers: modelConfig.headers(apiKey),
     body: JSON.stringify({
@@ -144,7 +164,7 @@ export async function directPolish(
     const url = geminiGenerateUrl(geminiModel, apiKey, true) + "&alt=sse";
     const body = buildGeminiBody(systemPrompt, content, { temperature: 0.4 });
 
-    const response = await fetch(url, {
+    const response = await tauriFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -191,7 +211,7 @@ export async function directPolish(
   // OpenAI-compatible providers: stream SSE
   const modelConfig = AI_MODEL_CONFIGS[modelType];
   const requestUrl = modelConfig.url(apiEndpoint);
-  const response = await fetch(requestUrl, {
+  const response = await tauriFetch(requestUrl, {
     method: "POST",
     headers: modelConfig.headers(apiKey),
     body: JSON.stringify({
@@ -297,7 +317,7 @@ export async function directOptimizeSuggest(params: {
         maxOutputTokens: 4096,
       });
 
-      const response = await fetch(url, {
+      const response = await tauriFetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -320,7 +340,7 @@ export async function directOptimizeSuggest(params: {
         ? modelId || modelConfig.defaultModel
         : modelConfig.defaultModel;
 
-      const response = await fetch(modelConfig.url(apiEndpoint), {
+      const response = await tauriFetch(modelConfig.url(apiEndpoint), {
         method: "POST",
         headers: modelConfig.headers(apiKey),
         body: JSON.stringify({
@@ -427,7 +447,7 @@ export async function directTestConnection(params: {
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const response = await fetch(testUrl, {
+    const response = await tauriFetch(testUrl, {
       method: "POST",
       headers,
       body: JSON.stringify(testBody),
