@@ -8,6 +8,8 @@ import {
   RouterProvider
 } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.tauri.gen";
+import { loadResumesFromDisk } from "./utils/tauriFileSystem";
+import { useResumeStore } from "./store/useResumeStore";
 
 // For desktop app, auto-navigate to dashboard when on root or landing page
 const { pathname } = window.location;
@@ -30,6 +32,23 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
+
+// Load resumes from ~/Documents/MagicResume/ on startup
+loadResumesFromDisk().then((diskResumes) => {
+  if (diskResumes.length > 0) {
+    const store = useResumeStore.getState();
+    const currentResumes = store.resumes;
+    let merged = { ...currentResumes };
+    for (const resume of diskResumes) {
+      const existing = merged[resume.id];
+      // Disk file wins if it's newer or doesn't exist in memory
+      if (!existing || resume.updatedAt > (existing.updatedAt ?? "")) {
+        merged[resume.id] = resume;
+      }
+    }
+    useResumeStore.setState({ resumes: merged });
+  }
+});
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

@@ -2,6 +2,12 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { getFileHandle, verifyPermission } from "@/utils/fileSystem";
 import {
+  isTauri,
+  saveResumeToFile,
+  debouncedSaveToFile,
+  deleteResumeFile,
+} from "@/utils/tauriFileSystem";
+import {
   BasicInfo,
   Education,
   Experience,
@@ -77,6 +83,13 @@ const syncResumeToFile = async (
   resumeData: ResumeData,
   prevResume?: ResumeData
 ) => {
+  // Tauri desktop: save directly via Tauri FS plugin
+  if (isTauri) {
+    saveResumeToFile(resumeData);
+    return;
+  }
+
+  // Web: use browser File System Access API
   try {
     const handle = await getFileHandle("syncDirectory");
     if (!handle) {
@@ -120,6 +133,12 @@ const debouncedSyncToFile = (
   resumeData: ResumeData,
   prevResume?: ResumeData
 ) => {
+  // Tauri desktop: use Tauri-native debounced save
+  if (isTauri) {
+    debouncedSaveToFile(resumeData);
+    return;
+  }
+
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
     syncResumeToFile(resumeData, prevResume);
@@ -238,22 +257,26 @@ export const useResumeStore = create(
           };
         });
 
-        (async () => {
-          try {
-            const handle = await getFileHandle("syncDirectory");
-            if (!handle) return;
-
-            const hasPermission = await verifyPermission(handle);
-            if (!hasPermission) return;
-
-            const dirHandle = handle as FileSystemDirectoryHandle;
+        if (isTauri) {
+          deleteResumeFile(resume);
+        } else {
+          (async () => {
             try {
-              await dirHandle.removeEntry(`${resume.title}.json`);
-            } catch (error) {}
-          } catch (error) {
-            console.error("Error deleting resume file:", error);
-          }
-        })();
+              const handle = await getFileHandle("syncDirectory");
+              if (!handle) return;
+
+              const hasPermission = await verifyPermission(handle);
+              if (!hasPermission) return;
+
+              const dirHandle = handle as FileSystemDirectoryHandle;
+              try {
+                await dirHandle.removeEntry(`${resume.title}.json`);
+              } catch (error) {}
+            } catch (error) {
+              console.error("Error deleting resume file:", error);
+            }
+          })();
+        }
       },
 
       duplicateResume: (resumeId) => {
