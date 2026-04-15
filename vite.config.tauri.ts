@@ -27,7 +27,9 @@ export default defineConfig({
       target: "react",
       autoCodeSplitting: true,
       routesDirectory: "src/routes",
-      generatedRouteTree: "src/routeTree.tauri.gen.ts"
+      generatedRouteTree: "src/routeTree.tauri.gen.ts",
+      // Exclude server-only API routes (they import Node.js modules)
+      routeFileIgnorePattern: "api"
     }),
     viteReact()
   ],
