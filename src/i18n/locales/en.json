@@ -256,7 +256,6 @@
         "name": "Minimalist",
         "description": "Large amount of whitespace, clean and pure layout style"
       },
-
       "elegant": {
         "name": "Elegant",
         "description": "Centered title single-column design, with a touch of elegance"
@@ -858,6 +857,31 @@
         "question": "How do I drag and drop to reorder modules?",
         "answer": "In the 'Layout' settings of the left edit panel, hover your cursor over the 'Drag Handle' (usually represented by a six-dot icon) on the left side of the module card. Click and hold the left mouse button to drag the module up or down to reorder the sections of your entire resume."
       }
+    }
+  },
+  "history": {
+    "title": "Version History",
+    "description": "Browse and restore resume snapshots",
+    "saveNow": "Save Snapshot",
+    "clearAll": "Clear",
+    "clearConfirmTitle": "Clear all history?",
+    "clearConfirmDescription": "This action cannot be undone. All snapshots will be permanently deleted.",
+    "cancel": "Cancel",
+    "confirm": "Clear All",
+    "restore": "Restore this version",
+    "delete": "Delete snapshot",
+    "saved": "Snapshot saved",
+    "restored": "Restored to previous version",
+    "cleared": "History cleared",
+    "empty": "No history yet",
+    "emptyHint": "Snapshots are saved automatically as you edit",
+    "count": "{count} snapshots",
+    "label": {
+      "auto": "Auto-save",
+      "manual": "Manual save",
+      "template": "Template change",
+      "ai-polish": "AI Polish",
+      "ai-optimize": "AI Optimize"
     }
   }
 }

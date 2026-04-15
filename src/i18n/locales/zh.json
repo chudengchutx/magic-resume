@@ -257,7 +257,6 @@
         "name": "极简模板",
         "description": "大面积留白，干净纯粹的排版风格"
       },
-
       "elegant": {
         "name": "优雅模板",
         "description": "居中标题单列设计，具有高级感的分隔线"
@@ -860,6 +859,31 @@
         "question": "如何拖拽调整模块顺序？",
         "answer": "在左侧编辑面板的“布局”设置中，将光标悬停在模块卡片左侧的「拖拽手柄」（通常表现为六个点状图标）上，按住鼠标左键即可上下拖拽模块以重新排序整个简历的章节。"
       }
+    }
+  },
+  "history": {
+    "title": "历史版本",
+    "description": "浏览和恢复简历的历史快照",
+    "saveNow": "保存快照",
+    "clearAll": "清空",
+    "clearConfirmTitle": "确认清空历史？",
+    "clearConfirmDescription": "此操作无法撤销，所有历史快照将被永久删除。",
+    "cancel": "取消",
+    "confirm": "确认清空",
+    "restore": "恢复此版本",
+    "delete": "删除此快照",
+    "saved": "快照已保存",
+    "restored": "已恢复到历史版本",
+    "cleared": "历史记录已清空",
+    "empty": "暂无历史记录",
+    "emptyHint": "编辑简历时会自动保存快照",
+    "count": "共 {count} 个快照",
+    "label": {
+      "auto": "自动保存",
+      "manual": "手动保存",
+      "template": "切换模板",
+      "ai-polish": "AI 润色",
+      "ai-optimize": "AI 优化"
     }
   }
 }

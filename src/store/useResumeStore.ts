@@ -26,6 +26,8 @@ import {
   blankResumeStateEn,
 } from "@/config/initialResumeData";
 import { generateUUID } from "@/utils/uuid";
+import { scheduleAutoSnapshot, createImmediateSnapshot } from "./useHistoryStore";
+
 interface ResumeStore {
   resumes: Record<string, ResumeData>;
   activeResumeId: string | null;
@@ -213,6 +215,7 @@ export const useResumeStore = create(
           };
 
           debouncedSyncToFile(updatedResume, resume);
+          scheduleAutoSnapshot(resumeId, updatedResume as unknown as Record<string, unknown>);
 
           return {
             resumes: {
@@ -687,6 +690,13 @@ export const useResumeStore = create(
 
         const template = DEFAULT_TEMPLATES.find((t) => t.id === templateId);
         if (!template) return;
+
+        // Snapshot before template change
+        createImmediateSnapshot(
+          activeResumeId,
+          resumes[activeResumeId] as unknown as Record<string, unknown>,
+          "template"
+        );
 
         const updatedResume = {
           ...resumes[activeResumeId],

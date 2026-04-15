@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAIConfigStore } from "@/store/useAIConfigStore";
+import { useResumeStore } from "@/store/useResumeStore";
+import { createImmediateSnapshot } from "@/store/useHistoryStore";
 import { AIModelType } from "@/config/ai";
 import { cn } from "@/lib/utils";
 import { isTauri, directPolish } from "@/utils/aiDirectClient";
@@ -184,6 +186,16 @@ export default function AIPolishDialog({
   };
 
   const handleApply = () => {
+    // Snapshot before applying AI polish
+    const { activeResumeId, activeResume } = useResumeStore.getState();
+    if (activeResumeId && activeResume) {
+      createImmediateSnapshot(
+        activeResumeId,
+        activeResume as unknown as Record<string, unknown>,
+        "ai-polish"
+      );
+    }
+
     // 将 Markdown 转为 HTML，并补回 Tiptap 所需的 ul/ol 类名
     const htmlContent = md.render(polishedContent)
       .replace(/<ul>/g, '<ul class="custom-list">')

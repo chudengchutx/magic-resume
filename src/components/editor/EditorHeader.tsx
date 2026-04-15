@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { GrammarCheckDrawer } from "./grammar/GrammarCheckDrawer";
+import { HistoryPanel } from "./HistoryPanel";
 import { AIOptimizeSuggestionDialog } from "../shared/ai/AIOptimizeSuggestionDialog";
 import { getFileHandle, getConfig } from "@/utils/fileSystem";
 
@@ -154,6 +155,7 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
             </Tooltip>
           </TooltipProvider>
 
+          <HistoryPanel />
           <GrammarCheckDrawer />
           {errors.length > 0 && (
              <div 
