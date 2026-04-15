@@ -36,6 +36,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 src/routeTree.gen.ts
+src/routeTree.tauri.gen.ts
+
+# Tauri
+/dist-tauri/
+/src-tauri/target/
+/src-tauri/gen/
 
 # idea
 .idea

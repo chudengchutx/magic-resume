@@ -15,6 +15,10 @@ import { Providers } from "@/app/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { getPreferredLocale } from "@/i18n/runtime";
 
+const isTauriApp =
+  typeof window !== "undefined" &&
+  "__TAURI_INTERNALS__" in window;
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -40,7 +44,7 @@ export const Route = createRootRoute({
   notFoundComponent: RootNotFound
 });
 
-function RootComponent() {
+function AppShell() {
   const pathname = useLocation({
     select: (location) => location.pathname
   });
@@ -52,23 +56,35 @@ function RootComponent() {
   }, [locale]);
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <NextIntlClientProvider
+      locale={locale}
+      messages={messages}
+      timeZone="Asia/Shanghai"
+    >
+      <Providers>
+        <Outlet />
+        <Toaster position="top-center" richColors />
+      </Providers>
+    </NextIntlClientProvider>
+  );
+}
+
+function RootComponent() {
+  // In Tauri desktop app, render without HTML/body wrappers
+  // since the HTML shell is provided by index-tauri.html
+  if (isTauriApp) {
+    return <AppShell />;
+  }
+
+  return (
+    <html lang="zh" suppressHydrationWarning>
       <head>
         <HeadContent />
         <link rel="icon" href="/favicon.ico?v=2" />
         <link rel="icon" href="/icon.png" />
       </head>
       <body suppressHydrationWarning>
-        <NextIntlClientProvider
-          locale={locale}
-          messages={messages}
-          timeZone="Asia/Shanghai"
-        >
-          <Providers>
-            <Outlet />
-            <Toaster position="top-center" richColors />
-          </Providers>
-        </NextIntlClientProvider>
+        <AppShell />
         <Scripts />
       </body>
     </html>

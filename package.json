@@ -11,10 +11,19 @@
     "preview": "vite preview",
     "release": "bumpp",
     "generate:template-snapshots": "tsx scripts/generate-template-snapshots.ts",
-    "install:playwright": "playwright install chromium"
+    "install:playwright": "playwright install chromium",
+    "dev:tauri": "vite dev --config vite.config.tauri.ts",
+    "build:tauri": "vite build --config vite.config.tauri.ts",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-fs": "^2",
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-shell": "^2",
     "@heroui/checkbox": "^2.3.30",
     "@heroui/date-input": "^2.3.30",
     "@heroui/react": "^2.8.8",
@@ -87,6 +96,8 @@
     "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@tanstack/router-plugin": "^1.160.2",
     "@types/lodash": "^4.17.13",
     "@types/node": "^20",
     "@types/react": "^18",
