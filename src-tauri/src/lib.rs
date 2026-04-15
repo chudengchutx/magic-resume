@@ -9,17 +9,6 @@ fn quit_app() {
     std::process::exit(0);
 }
 
-fn toggle_main_window(app: &tauri::AppHandle) {
-    if let Some(win) = app.get_webview_window("main") {
-        if win.is_visible().unwrap_or(false) {
-            let _ = win.hide();
-        } else {
-            let _ = win.show();
-            let _ = win.set_focus();
-        }
-    }
-}
-
 fn show_main_window(app: &tauri::AppHandle) {
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.show();
@@ -98,15 +87,21 @@ pub fn run() {
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app_handle, event| match event {
-            RunEvent::Reopen { .. } => {
-                // When the dock icon is clicked, show the window
-                show_main_window(app_handle);
+        .run(|app_handle, event| {
+            #[allow(clippy::single_match)]
+            match event {
+                RunEvent::ExitRequested { api, .. } => {
+                    // Keep the app running in the background when the window is closed
+                    api.prevent_exit();
+                }
+                _ => {
+                    // macOS: handle dock icon click to reopen window
+                    #[cfg(target_os = "macos")]
+                    if let RunEvent::Reopen { .. } = &event {
+                        show_main_window(app_handle);
+                    }
+                    let _ = app_handle; // suppress unused warning on non-macOS
+                }
             }
-            RunEvent::ExitRequested { api, .. } => {
-                // Keep the app running in the background when the window is closed
-                api.prevent_exit();
-            }
-            _ => {}
         });
 }
