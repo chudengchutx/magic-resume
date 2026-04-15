@@ -171,7 +171,10 @@ pnpm tauri:build          # 构建 .app / .dmg
 4. 解压后进入目录，终端执行 `pnpm install` → `pnpm tauri:build`
 5. 安装包在 `src-tauri/target/release/bundle/dmg/` 目录下
 
-**不要让用户折腾 git clone / git remote / git fetch 等命令，直接下载 ZIP 最简单。**
+**不要让用户折腾复杂的 git 命令。推荐方式：**
+- 有梯子时：`git clone --branch 分支名 --depth 1 仓库地址 目录名`（最快，只拉最新提交）
+- 没梯子时：用加速镜像下载 ZIP（ghproxy.net / hub.gitmirror.com / gitclone.com）
+- GitHub 下载慢时主动提醒用户这些加速方法
 
 **macOS 未签名 App 安装方法：**
 如果安装后被 Gatekeeper 拦截，终端执行：
