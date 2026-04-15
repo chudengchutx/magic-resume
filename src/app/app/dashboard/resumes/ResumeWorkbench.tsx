@@ -28,6 +28,9 @@ import {
     toStringArray
 } from "./utils";
 import { useDragDropImport } from "@/hooks/useDragDropImport";
+import { isTauri } from "@/utils/tauriFileSystem";
+import { directResumeImport } from "@/utils/aiDirectClient";
+import type { AIModelType } from "@/config/ai";
 import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
 const MAX_PDF_IMPORT_PAGES = 3;
@@ -49,6 +52,7 @@ export const ResumeWorkbench = () => {
         geminiApiKey,
         geminiModelId,
         setRequireGeminiConfig,
+        getActiveConfig,
     } = useAIConfigStore();
     const router = useRouter();
     const [hasConfiguredFolder, setHasConfiguredFolder] = useState(false);
@@ -239,9 +243,10 @@ export const ResumeWorkbench = () => {
     };
 
     const importResumeFromPdf = async (file: File) => {
-        if (!geminiApiKey || !geminiModelId) {
+        const activeConfig = getActiveConfig();
+        if (!activeConfig || !activeConfig.apiKey) {
             setIsImportDialogOpen(false);
-            setRequireGeminiConfig(true);
+            toast.error(t("dashboard.resumes.importDialog.noAIConfig") || "请先配置 AI 服务");
             router.push("/app/dashboard/ai");
             return;
         }
@@ -249,6 +254,39 @@ export const ResumeWorkbench = () => {
         const pdfImages = await extractImagesFromPdf(file);
         if (pdfImages.length === 0) {
             throw new Error("No extractable PDF pages");
+        }
+
+        // In Tauri mode or when directResumeImport is available, call AI directly
+        if (isTauri) {
+            const result = await directResumeImport({
+                modelType: activeConfig.modelType as AIModelType,
+                apiKey: activeConfig.apiKey,
+                modelId: activeConfig.modelId,
+                apiEndpoint: activeConfig.apiEndpoint,
+                images: pdfImages,
+                locale,
+            });
+
+            if (!result.success) {
+                throw new Error(result.error || "Resume import failed");
+            }
+
+            const nameWithoutExt = file.name.replace(/\.[^.]+$/, "").trim();
+            const resume = createResumeFromAIResult(result.resume, nameWithoutExt);
+            const resumeId = addResume(resume);
+            setActiveResume(resumeId);
+            setIsImportDialogOpen(false);
+            toast.success(t("dashboard.resumes.importDialog.pdfSuccess"));
+            router.push(`/app/workbench/${resumeId}`);
+            return;
+        }
+
+        // Web mode: use server API route (Gemini only)
+        if (!geminiApiKey || !geminiModelId) {
+            setIsImportDialogOpen(false);
+            setRequireGeminiConfig(true);
+            router.push("/app/dashboard/ai");
+            return;
         }
 
         const response = await fetch("/api/resume-import", {

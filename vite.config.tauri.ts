@@ -7,6 +7,7 @@ import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
+  base: "./",
   clearScreen: false,
   server: {
     port: 3000,

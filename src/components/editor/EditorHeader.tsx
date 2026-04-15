@@ -25,6 +25,7 @@ import { GrammarCheckDrawer } from "./grammar/GrammarCheckDrawer";
 import { HistoryPanel } from "./HistoryPanel";
 import { AIOptimizeSuggestionDialog } from "../shared/ai/AIOptimizeSuggestionDialog";
 import { getFileHandle, getConfig } from "@/utils/fileSystem";
+import { isTauri } from "@/utils/tauriFileSystem";
 
 interface EditorHeaderProps {
   isMobile?: boolean;
@@ -65,8 +66,9 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
       className={`h-16 border-b sticky top-0 z-10`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
+      data-tauri-drag-region
     >
-      <div className="flex items-center justify-between px-6 h-full pr-2">
+      <div className={`flex items-center justify-between h-full pr-2 ${isTauri ? "pl-20" : "px-6"}`}>
         <div className="flex items-center space-x-4 scrollbar-hide">
           <motion.div
             className="flex items-center space-x-2 shrink-0 cursor-pointer"

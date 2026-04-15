@@ -73,7 +73,7 @@ export const createTemplatePreviewData = (
 export const getTemplateSnapshotPath = (
   locale: TemplatePreviewLocale,
   templateId: string
-) => `/${TEMPLATE_SNAPSHOT_PUBLIC_DIR}/${locale}/${templateId}.png`;
+) => `./${TEMPLATE_SNAPSHOT_PUBLIC_DIR}/${locale}/${templateId}.png`;
 
 export const getTemplateSnapshotSrc = (
   manifest: TemplateSnapshotManifest,

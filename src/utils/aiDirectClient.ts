@@ -481,4 +481,177 @@ export async function directTestConnection(params: {
   }
 }
 
+// ─── Resume Import from PDF images ───────────────────────────────
+
+function extractBase64Payload(dataUrl: string) {
+  const matched = dataUrl.match(/^data:(.*?);base64,(.*)$/);
+  if (matched) {
+    return { mimeType: matched[1] || "image/jpeg", data: matched[2] || "" };
+  }
+  return { mimeType: "image/jpeg", data: dataUrl };
+}
+
+function parseJsonPayload(content: string) {
+  const text = content.trim();
+  try { return JSON.parse(text); } catch {}
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) { try { return JSON.parse(fenced[1].trim()); } catch {} }
+  const objectBlock = text.match(/\{[\s\S]*\}/);
+  if (objectBlock?.[0]) { try { return JSON.parse(objectBlock[0]); } catch {} }
+  return null;
+}
+
+export async function directResumeImport(params: {
+  modelType: AIModelType;
+  apiKey: string;
+  modelId?: string;
+  apiEndpoint?: string;
+  images: string[];
+  locale?: string;
+}) {
+  const { modelType, apiKey, modelId, apiEndpoint, images, locale } = params;
+  const language = locale === "en" ? "English" : "Chinese";
+
+  const systemPrompt = `你是一个专业的简历结构化助手。根据用户提供的简历内容，提取信息并只输出一个合法 JSON 对象。
+
+输出约束：
+1. 只允许输出 JSON，不要输出 Markdown，不要输出解释。
+2. 如果某个字段不确定，使用空字符串或空数组。
+3. 请使用 ${language} 输出内容文本。
+4. description/details 字段输出字符串数组，每一项为一句可读内容。
+
+JSON 结构：
+{
+  "title": "简历标题",
+  "basic": {
+    "name": "",
+    "title": "",
+    "email": "",
+    "phone": "",
+    "location": "",
+    "employementStatus": "",
+    "birthDate": ""
+  },
+  "education": [
+    {
+      "school": "",
+      "major": "",
+      "degree": "",
+      "startDate": "",
+      "endDate": "",
+      "gpa": "",
+      "description": ["", ""]
+    }
+  ],
+  "experience": [
+    {
+      "company": "",
+      "position": "",
+      "date": "",
+      "details": ["", ""]
+    }
+  ],
+  "projects": [
+    {
+      "name": "",
+      "role": "",
+      "date": "",
+      "description": ["", ""],
+      "link": "",
+      "linkLabel": ""
+    }
+  ],
+  "skills": ["", ""]
+}`;
+
+  const userText = "请识别以下简历页面图片中的信息，并严格按 JSON 结构输出。";
+
+  try {
+    let resultText: string;
+
+    if (modelType === "gemini") {
+      const geminiModel = modelId || "gemini-flash-latest";
+      const url = geminiGenerateUrl(geminiModel, apiKey);
+
+      const imageParts = images.map((img) => {
+        const { mimeType, data } = extractBase64Payload(img);
+        return { inlineData: { mimeType, data } };
+      });
+
+      const body = {
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ parts: [{ text: userText }, ...imageParts] }],
+        generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
+      };
+
+      const response = await tauriFetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Gemini API error: ${response.status} ${errorText.slice(0, 200)}`);
+      }
+
+      const data = await response.json();
+      resultText = extractGeminiText(data);
+    } else {
+      // OpenAI-compatible providers (vision API)
+      const modelConfig = AI_MODEL_CONFIGS[modelType];
+      const model = modelConfig.requiresModelId
+        ? modelId || modelConfig.defaultModel
+        : modelConfig.defaultModel;
+
+      const imageContent = images.map((img) => ({
+        type: "image_url" as const,
+        image_url: { url: img },
+      }));
+
+      const response = await tauriFetch(modelConfig.url(apiEndpoint), {
+        method: "POST",
+        headers: modelConfig.headers(apiKey),
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: [{ type: "text", text: userText }, ...imageContent],
+            },
+          ],
+          temperature: 0.2,
+          max_tokens: 4096,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error?.message || errorJson.message || errorMessage;
+        } catch {
+          if (errorText) errorMessage = errorText.slice(0, 200);
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      resultText = data.choices?.[0]?.message?.content || "";
+    }
+
+    const parsed = parseJsonPayload(resultText);
+    if (!parsed) {
+      return { success: false, error: "Failed to parse AI response as JSON" };
+    }
+
+    return { success: true, resume: parsed };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return { success: false, error: message };
+  }
+}
+
 export { isTauri };
